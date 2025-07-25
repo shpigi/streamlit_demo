@@ -358,9 +358,9 @@ def convert_to_png(image_data):
 
 
 def image_modification():
-    st.header("AI Image Generation & Modification")
+    st.header("Advanced AI Image Modification & Generation")
     st.markdown(
-        "This tab demonstrates how to use OpenAI's DALL-E model to generate modified versions of images based on text instructions. Upload an image or select from provided samples, then describe your desired modifications."
+        "This tab demonstrates advanced image modification using OpenAI's latest models. Choose from multiple approaches including DALL-E 3, image variations, and custom modifications."
     )
 
     # Get API key
@@ -375,11 +375,13 @@ def image_modification():
 
     client = OpenAI(api_key=api_key)
 
-    # Sample images
+    # Sample images with better variety
     sample_images = {
         "Mountain Landscape": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800",
         "City Street": "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800",
-        "Ocean Sunset": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800"
+        "Ocean Sunset": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800",
+        "Portrait": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800",
+        "Abstract Art": "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=800"
     }
 
     # Image input method
@@ -411,15 +413,77 @@ def image_modification():
             except Exception as e:
                 st.error(f"Error loading image: {e}")
 
-    # Modification instructions
-    modification_instructions = st.text_area(
-        "Describe the modifications you want to make to the image:",
-        placeholder="e.g., Make it look like a watercolor painting, Add a sunset sky, Convert to black and white with dramatic lighting...",
-        height=100
+    # Image Modification Options
+    st.subheader("Modification Options")
+    
+    modification_type = st.selectbox(
+        "Choose modification type:",
+        [
+            "New Image Generation",
+            "Style Transfer",
+            "Background Enhancement",
+            "Creative Reimagining"
+        ]
     )
 
+    # Custom instructions based on modification type
+    if modification_type == "New Image Generation":
+        modification_instructions = st.text_area(
+            "Describe the new image you want to generate:",
+            placeholder="e.g., A futuristic cityscape with flying cars and neon lights, A mountain landscape in watercolor style within a Studio Ghibli scene...",
+            height=100
+        )
+        st.info("💡 Best for creating completely new images. Works great with detailed descriptions.")
+        
+    elif modification_type == "Style Transfer":
+        style_options = ["Watercolor", "Oil Painting", "Pencil Sketch", "Pop Art", "Vintage Film", "Minimalist", "Cyberpunk", "Studio Ghibli", "Impressionist", "Abstract"]
+        selected_style = st.selectbox("Choose artistic style:", style_options)
+        modification_instructions = f"Convert the image to {selected_style} style"
+        st.info("💡 Good for artistic style changes. Works well with most image types.")
+        
+    elif modification_type == "Background Enhancement":
+        background_options = ["Golden Hour", "Studio", "Nature", "City", "Fantasy", "Minimalist", "Sunset", "Mountain", "Beach", "Forest"]
+        selected_background = st.selectbox("Choose new background:", background_options)
+        modification_instructions = f"Replace the background with a {selected_background} scene"
+        st.info("💡 Good for background replacement. Works best with clear subjects.")
+        
+    elif modification_type == "Creative Reimagining":
+        creative_options = ["Studio Ghibli Style", "Cyberpunk", "Steampunk", "Fairy Tale", "Sci-Fi", "Retro 80s", "Vintage", "Futuristic"]
+        selected_creative = st.selectbox("Choose creative direction:", creative_options)
+        modification_instructions = f"Transform the image into {selected_creative} style"
+        st.info("💡 Perfect for creating unique, artistic interpretations!")
+
+    # Generation Settings
+    with st.expander("⚙️ Generation Settings"):
+        st.markdown("**DALL-E 3 Settings:**")
+        
+        # Always use DALL-E 3
+        model_choice = "dall-e-3"
+        st.info("💡 Using DALL-E 3: Best quality, generates 1 image, supports different aspect ratios")
+        
+        size_choice = st.selectbox(
+            "Size:",
+            ["1024x1024", "1792x1024", "1024x1792"],
+            help="Square (1024x1024) for most uses, Wide (1792x1024) for landscapes, Tall (1024x1792) for portraits"
+        )
+        
+        quality_choice = st.selectbox(
+            "Quality:",
+            ["standard", "hd"],
+            help="Standard: Good quality, cheaper. HD: Higher quality, more expensive"
+        )
+        
+        st.markdown("**Creativity Control:**")
+        creativity_level = st.selectbox(
+            "Stay close to original:",
+            ["More Creative", "Balanced", "Stay Close"],
+            help="More Creative: More artistic freedom. Stay Close: More faithful to original"
+        )
+        
+        num_variations = 1
+
     # Process button
-    if st.button("Generate Modified Image") and modification_instructions:
+    if st.button("Generate Modified Image", type="primary") and modification_instructions:
         if not (uploaded_image or selected_image_url):
             st.error("Please provide an image first.")
             return
@@ -428,101 +492,158 @@ def image_modification():
             try:
                 # Prepare the image for OpenAI API
                 if uploaded_image:
-                    # For uploaded image, convert to PNG
                     image_data = convert_to_png(uploaded_image)
                 else:
-                    # For URL, download and convert to PNG
                     response = requests.get(selected_image_url)
                     image_bytes = response.content
                     image_data = convert_to_png(image_bytes)
 
-                # Call OpenAI API for image generation based on modification instructions
-                # Since edit API requires a mask, we'll use generate with detailed instructions
-                enhanced_prompt = f"Create a modified version of an image with these changes: {modification_instructions}. The image should maintain the same composition and subject but with the requested modifications applied."
+                # Enhanced prompt based on modification type and creativity level
+                if modification_type == "New Image Generation":
+                    if creativity_level == "Stay Close":
+                        enhanced_prompt = f"Create a new image based on: {modification_instructions}. Keep the same composition, colors, and style as the original image."
+                    elif creativity_level == "Balanced":
+                        enhanced_prompt = f"Create a new image based on: {modification_instructions}. Maintain some elements from the original while being creative."
+                    else:  # More Creative
+                        enhanced_prompt = modification_instructions
+                        
+                elif modification_type == "Style Transfer":
+                    if creativity_level == "Stay Close":
+                        enhanced_prompt = f"Apply {modification_instructions} while keeping the original composition, subject, and details very close to the source image."
+                    elif creativity_level == "Balanced":
+                        enhanced_prompt = f"Apply {modification_instructions} while maintaining the same composition and subject."
+                    else:  # More Creative
+                        enhanced_prompt = f"Apply {modification_instructions} with artistic freedom and creative interpretation."
+                        
+                elif modification_type == "Background Enhancement":
+                    if creativity_level == "Stay Close":
+                        enhanced_prompt = f"Replace the background with a {modification_instructions} while keeping the main subject exactly as it is in the original image."
+                    elif creativity_level == "Balanced":
+                        enhanced_prompt = f"Replace the background with a {modification_instructions} while maintaining the same subject and composition."
+                    else:  # More Creative
+                        enhanced_prompt = f"Replace the background with a {modification_instructions} and feel free to enhance the overall scene creatively."
+                        
+                elif modification_type == "Creative Reimagining":
+                    if creativity_level == "Stay Close":
+                        enhanced_prompt = f"Transform the image into {modification_instructions} while keeping the original composition and subject very close to the source image."
+                    elif creativity_level == "Balanced":
+                        enhanced_prompt = f"Transform the image into {modification_instructions} while maintaining the same composition and subject."
+                    else:  # More Creative
+                        enhanced_prompt = f"Transform the image into {modification_instructions} with artistic freedom and creative interpretation."
+
+                # Call OpenAI API with DALL-E 3
                 response = client.images.generate(
-                    model="dall-e-2",
+                    model="dall-e-3",
                     prompt=enhanced_prompt,
                     n=1,
-                    size="1024x1024"
+                    size=size_choice,
+                    quality=quality_choice
                 )
 
                 # Display the result
                 if response.data:
-                    modified_image_url = response.data[0].url
-                    st.success("Image modification completed!")
+                    st.success(f"Image modification completed! Generated {len(response.data)} image(s).")
                     
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.subheader("Original Image")
-                        if uploaded_image:
-                            # Reset file pointer to beginning for display
-                            uploaded_image.seek(0)
-                            st.image(uploaded_image, use_container_width=True)
-                        else:
-                            st.image(selected_image_url, use_container_width=True)
+                    # Display original image
+                    st.subheader("Original Image")
+                    if uploaded_image:
+                        uploaded_image.seek(0)
+                        st.image(uploaded_image, use_container_width=True)
+                    else:
+                        st.image(selected_image_url, use_container_width=True)
                     
-                    with col2:
-                        st.subheader("Modified Image")
-                        st.image(modified_image_url, use_container_width=True)
+                    # Display generated images
+                    st.subheader("Generated Image(s)")
                     
-                    # Download button
-                    st.download_button(
-                        label="Download Modified Image",
-                        data=requests.get(modified_image_url).content,
-                        file_name="modified_image.png",
-                        mime="image/png"
-                    )
+                    if len(response.data) == 1:
+                        # Single image - display side by side
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.image(response.data[0].url, use_container_width=True, caption="Generated Image")
+                        with col2:
+                            st.download_button(
+                                label="Download Image",
+                                data=requests.get(response.data[0].url).content,
+                                file_name="generated_image.png",
+                                mime="image/png"
+                            )
+                    else:
+                        # Multiple images - display in grid
+                        cols = st.columns(min(len(response.data), 3))
+                        for i, image_data in enumerate(response.data):
+                            with cols[i % 3]:
+                                st.image(image_data.url, use_container_width=True, caption=f"Variation {i+1}")
+                                st.download_button(
+                                    label=f"Download Variation {i+1}",
+                                    data=requests.get(image_data.url).content,
+                                    file_name=f"generated_image_{i+1}.png",
+                                    mime="image/png"
+                                )
 
             except Exception as e:
                 st.error(f"Error generating modified image: {e}")
+                st.info("💡 Tip: Make sure your OpenAI API key has sufficient credits and the model you selected is available.")
 
     st.code(
         """
 # The code for this section
 def image_modification():
-    st.header("AI Image Modification")
+    st.header("Advanced AI Image Modification")
     
     # Get API key
     api_key = st.text_input("Enter your OpenAI API key", type="password")
     client = OpenAI(api_key=api_key)
     
-    # Sample images
+    # Sample images with better variety
     sample_images = {
         "Mountain Landscape": "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800",
         "City Street": "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800",
-        "Ocean Sunset": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800"
+        "Ocean Sunset": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800",
+        "Portrait": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800",
+        "Abstract Art": "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=800"
     }
     
-    # Image input methods (upload, sample, URL)
-    input_method = st.radio("Choose input method:", ["Upload Image", "Select Sample Image", "Enter Image URL"])
+    # Advanced modification options
+    modification_type = st.selectbox("Choose modification type:", [
+        "DALL-E 3 - Advanced Generation",
+        "DALL-E 3 - Image Variations", 
+        "DALL-E 2 - Custom Modifications",
+        "Style Transfer",
+        "Background Replacement",
+        "Object Addition/Removal"
+    ])
     
-    # Handle different input methods
-    if input_method == "Upload Image":
-        uploaded_image = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
-    elif input_method == "Select Sample Image":
-        selected_sample = st.selectbox("Choose a sample image:", list(sample_images.keys()))
-        selected_image_url = sample_images[selected_sample]
-    elif input_method == "Enter Image URL":
-        image_url = st.text_input("Enter image URL:")
+    # Advanced settings
+    with st.expander("Advanced Settings"):
+        model_choice = st.selectbox("Select model:", ["dall-e-3", "dall-e-2"])
+        size_choice = st.selectbox("Select image size:", ["1024x1024", "1792x1024", "1024x1792"])
+        quality_choice = st.selectbox("Select quality:", ["standard", "hd"])
+        num_variations = st.slider("Number of variations:", 1, 4, 1)
     
-    # Modification instructions
-    modification_instructions = st.text_area("Describe the modifications...")
-    
-    # Process with OpenAI API
-    if uploaded_image:
-        image_data = convert_to_png(uploaded_image)  # Convert to PNG
+    # Enhanced prompt generation based on modification type
+    if modification_type == "DALL-E 3 - Advanced Generation":
+        enhanced_prompt = modification_instructions
+    elif modification_type == "DALL-E 3 - Image Variations":
+        enhanced_prompt = f"Create variations of this image with these changes: {modification_instructions}"
     else:
-        response = requests.get(selected_image_url)
-        image_data = convert_to_png(response.content)  # Convert to PNG
+        enhanced_prompt = f"Apply {modification_instructions} to this image"
     
-    # Since edit API requires a mask, we use generate with enhanced prompts
-    enhanced_prompt = f"Create a modified version: {modification_instructions}"
-    response = client.images.generate(
-        model="dall-e-2",
-        prompt=enhanced_prompt,
-        n=1,
-        size="1024x1024"
-    )
+    # Call OpenAI API with selected model and settings
+    if model_choice == "dall-e-3":
+        response = client.images.generate(
+            model="dall-e-3",
+            prompt=enhanced_prompt,
+            n=1,
+            size=size_choice,
+            quality=quality_choice
+        )
+    else:
+        response = client.images.generate(
+            model="dall-e-2",
+            prompt=enhanced_prompt,
+            n=num_variations,
+            size=size_choice
+        )
 """,
         language="python",
     )
