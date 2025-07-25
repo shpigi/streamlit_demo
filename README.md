@@ -20,6 +20,12 @@ The application is organized into several tabs, each focusing on a different asp
 
 *   **LLM Conversation:** A chat interface to converse with OpenAI's `gpt-4o` model.
 
+*   **Image Modification:** An AI-powered image editing interface using OpenAI's DALL-E model:
+    *   Upload images, select from sample images, or provide image URLs
+    *   Provide text instructions for image modifications
+    *   View side-by-side comparison of original and modified images
+    *   Download the modified images
+
 The demo uses the **Palmer Penguins** dataset, a popular and clean dataset for classification tasks, to showcase data filtering, visualization, and model prediction.
 
 ## Installation
